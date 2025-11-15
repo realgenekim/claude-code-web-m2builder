@@ -30,11 +30,34 @@ See [TEST-RESULTS.md](TEST-RESULTS.md) for complete results.
 
 ## Quick Start
 
+### Building Bundles Locally
+
 ```bash
 # List available bundles
 make list-deps
 
-# Test a bundle locally
+# Build a specific bundle
+make bundle BUNDLE=clojure-minimal
+
+# Build a bundle with specific output directory
+make bundle BUNDLE=web-stack OUTPUT_DIR=dist
+
+# Build all bundles
+make bundle-all
+
+# Clean built artifacts
+make clean-bundles
+
+# Get help
+make help
+```
+
+Output bundles are saved to `output/` directory (default) as `m2-{bundle-id}.tar.gz`.
+
+### Using Scripts Directly
+
+```bash
+# Test a bundle locally (alternative method)
 ./scripts/test-bundle-local.sh bundles/gcs-client.edn
 ```
 

@@ -7,6 +7,7 @@ deps-responses/*.edn
 *.tar.gz
 *.tar.zst
 *.tgz
+output/
 
 # Maven artifacts
 .m2/
