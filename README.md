@@ -1,3 +1,61 @@
+# M2 Builder - Maven Dependency Bundles for Sandboxed Environments
+
+> **Status**: ✅ Proof of Concept Complete - **Google Cloud Storage Dependencies Successfully Tested!**
+
+Build and distribute prewarmed Maven/Clojure `.m2` caches as downloadable bundles. Perfect for sandboxed coding environments (Codex CLI, Claude Code) that can't directly access Maven Central.
+
+## 🎉 The Problem We Solved
+
+**Challenge**: Google Cloud Storage Java client has 81 transitive dependencies and is notoriously difficult to work with in restricted environments.
+
+**Solution**: Prebuilt `.m2` bundle that:
+- ✅ Downloads in seconds (47 MB compressed)
+- ✅ Contains all dependencies
+- ✅ Works without Maven Central access
+- ✅ No authentication required (public HTTPS URL)
+
+## Test Results
+
+**All bundles tested successfully on 2025-11-15:**
+
+| Bundle | Build Time | Artifacts | Size | Status |
+|--------|------------|-----------|------|--------|
+| `clojure-minimal` | 3s | 3 JARs | 5 MB | ✅ |
+| `web-stack` | 3s | 98 JARs | 17 MB | ✅ |
+| **`gcs-client`** | **12s** | **81 JARs** | **47 MB** | ✅ **🔥** |
+
+**Key Finding**: Original estimate for GCS was 450 MB. **Actual size: 47 MB (89% smaller!)**
+
+See [TEST-RESULTS.md](TEST-RESULTS.md) for complete results.
+
+## Quick Start
+
+```bash
+# List available bundles
+make list-deps
+
+# Test a bundle locally
+./scripts/test-bundle-local.sh bundles/gcs-client.edn
+```
+
+## Documentation
+
+**Start here**: [docs/INDEX.md](docs/INDEX.md)
+
+- [docs/SUMMARY.md](docs/SUMMARY.md) - Executive summary
+- [docs/interaction-example.md](docs/interaction-example.md) - Concrete walkthrough
+- [docs/github-architecture.md](docs/github-architecture.md) - Full architecture
+- [plans/implementation-plan.md](plans/implementation-plan.md) - Build roadmap
+- [plans/testing-plan.md](plans/testing-plan.md) - Testing strategy
+
+---
+
+## Original M2 Builder (GCS-based)
+
+The sections below describe the original GCS-based approach. The new GitHub-based architecture is described in the docs above.
+
+---
+
 # M2 Builder - Reusable M2 Cache Management
 
 Reusable scripts for building and restoring project-scoped Maven M2 caches for any Clojure project.
