@@ -1,0 +1,1 @@
+Requesting web-stack bundle from sandboxed environment
