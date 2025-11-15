@@ -147,6 +147,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create build metadata file
+        run: |
+          BUNDLE_ID="${{ steps.meta.outputs.bundle-id }}"
+          mkdir -p build-metadata
+          cat > "build-metadata/${BUNDLE_ID}-${{ github.run_id }}.txt" <<EOF
+          Bundle: ${BUNDLE_ID}
+          Build time: ${{ steps.build.outputs.duration }}s
+          Size: ${{ steps.build.outputs.size-compressed }} MB
+          Artifacts: ${{ steps.build.outputs.artifact-count }} JARs
+          Download: https://github.com/${{ github.repository }}/releases/download/m2-bundles/m2-${BUNDLE_ID}.tar.gz
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add build-metadata/
+          git commit -m "Add build metadata for ${BUNDLE_ID}"
+          git push origin ${{ github.ref_name }}
+
       - name: Create Pull Request
         id: pr
         uses: peter-evans/create-pull-request@v6
