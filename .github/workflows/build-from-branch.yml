@@ -98,16 +98,25 @@ jobs:
 
           mkdir -p "$TMP_M2"
 
+          # Create temp directory with bundle file as deps.edn
+          TEMP_DIR="/tmp/bundle-build-$$"
+          mkdir -p "$TEMP_DIR"
+          cp "$SOURCE_FILE" "$TEMP_DIR/deps.edn"
+
           START_TIME=$(date +%s)
 
-          # Download dependencies
+          # Download dependencies (cd to temp dir so clojure uses deps.edn there)
+          cd "$TEMP_DIR"
           clojure -Srepro -Sforce \
                   -Sdeps "{:mvn/local-repo \"$TMP_M2\"}" \
-                  -Sdeps "$(cat $SOURCE_FILE)" \
                   -P
+          cd -
 
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
+
+          # Cleanup temp dir
+          rm -rf "$TEMP_DIR"
 
           # Get statistics
           ARTIFACT_COUNT=$(find "$TMP_M2" -name "*.jar" | wc -l | tr -d ' ')

@@ -99,11 +99,20 @@ jobs:
           echo "Downloading dependencies..."
           echo "This may take several minutes for large bundles..."
 
-          # Use the bundle file directly as deps.edn
+          # Create temp directory with bundle file as deps.edn
+          TEMP_DIR="/tmp/bundle-build-$$"
+          mkdir -p "$TEMP_DIR"
+          cp "$BUNDLE_FILE" "$TEMP_DIR/deps.edn"
+
+          # Change to temp dir and run clojure (it will use deps.edn there)
+          cd "$TEMP_DIR"
           clojure -Srepro -Sforce \
                   -Sdeps "{:mvn/local-repo \"$TMP_M2\"}" \
-                  -Sdeps "$(cat $BUNDLE_FILE)" \
                   -P
+
+          # Cleanup temp dir
+          cd -
+          rm -rf "$TEMP_DIR"
 
           echo "Dependencies downloaded successfully!"
 
