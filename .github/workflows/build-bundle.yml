@@ -11,6 +11,9 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: write  # Required for creating releases
+
 jobs:
   detect-bundles:
     runs-on: ubuntu-latest

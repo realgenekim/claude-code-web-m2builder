@@ -6,6 +6,10 @@ on:
       - 'claude/bundle-request-*'
       - 'claude/custom-deps-*'
 
+permissions:
+  contents: write  # Required for creating releases and PRs
+  pull-requests: write  # Required for creating PRs
+
 jobs:
   build-and-create-pr:
     runs-on: ubuntu-latest
