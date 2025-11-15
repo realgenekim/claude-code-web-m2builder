@@ -197,7 +197,7 @@ jobs:
 
 ### 🚀 Usage
 
-\`\`\`bash
+```bash
 # Download
 curl -L -O ${DOWNLOAD_URL}
 
@@ -207,7 +207,7 @@ tar xzf m2-${BUNDLE_ID}.tar.gz -C ~/.m2-cache/
 
 # Use with Clojure
 clojure -Sdeps '{:mvn/local-repo "~/.m2-cache/m2-${BUNDLE_ID}"}' -M:your-alias
-\`\`\`
+```
 
 ---
 
