@@ -1,0 +1,5 @@
+Bundle: web-stack
+Build time: 9s
+Size: 17 MB
+Artifacts: 98 JARs
+Download: https://github.com/realgenekim/claude-code-web-m2builder/releases/download/m2-bundles/m2-web-stack.tar.gz
