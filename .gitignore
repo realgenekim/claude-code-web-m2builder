@@ -1,0 +1,29 @@
+# Ignore actual response files (transient)
+deps-responses/*.edn
+!deps-responses/.gitkeep
+
+# Ignore temp build artifacts
+/tmp/
+*.tar.gz
+*.tar.zst
+*.tgz
+
+# Maven artifacts
+.m2/
+.m2-*/
+
+# Clojure
+.cpcache/
+.nrepl-port
+.rebel_readline_history
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.lsp/
+.clj-kondo/.cache/
+
+# OS
+.DS_Store
+Thumbs.db

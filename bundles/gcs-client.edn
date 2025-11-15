@@ -1,0 +1,8 @@
+{:schema-version "1.0.0"
+ :bundle-id "gcs-client"
+ :version "1.0.0"
+ :description "Google Cloud Storage Java client - the classic hard problem"
+ :maintainer "@realgenekim"
+ :tags ["google-cloud" "gcs" "storage"]
+ :size-estimate-mb 450
+ :deps {com.google.cloud/google-cloud-storage {:mvn/version "2.52.0"}}}

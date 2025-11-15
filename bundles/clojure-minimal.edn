@@ -1,0 +1,7 @@
+{:schema-version "1.0.0"
+ :bundle-id "clojure-minimal"
+ :version "1.0.0"
+ :description "Pure Clojure stdlib only"
+ :maintainer "@realgenekim"
+ :size-estimate-mb 15
+ :deps {org.clojure/clojure {:mvn/version "1.11.3"}}}
