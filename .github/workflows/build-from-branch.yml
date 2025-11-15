@@ -1,0 +1,256 @@
+name: Build Bundle from Claude Branch
+
+on:
+  push:
+    branches:
+      - 'claude/bundle-request-*'
+      - 'claude/custom-deps-*'
+
+jobs:
+  build-and-create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Extract metadata from branch name
+        id: meta
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          echo "branch-name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+          # Extract bundle ID from branch name
+          # claude/bundle-request-gcs-client-ABC123 → gcs-client
+          if [[ "$BRANCH_NAME" =~ ^claude/bundle-request-(.+)-[^-]+$ ]]; then
+            BUNDLE_ID="${BASH_REMATCH[1]}"
+            REQUEST_TYPE="predefined"
+          elif [[ "$BRANCH_NAME" =~ ^claude/custom-deps-(.+)-[^-]+$ ]]; then
+            BUNDLE_ID="${BASH_REMATCH[1]}"
+            REQUEST_TYPE="custom"
+          else
+            echo "Error: Branch name doesn't match expected pattern"
+            exit 1
+          fi
+
+          echo "bundle-id=$BUNDLE_ID" >> $GITHUB_OUTPUT
+          echo "request-type=$REQUEST_TYPE" >> $GITHUB_OUTPUT
+
+          echo "Branch: $BRANCH_NAME"
+          echo "Bundle ID: $BUNDLE_ID"
+          echo "Request type: $REQUEST_TYPE"
+
+      - name: Setup Clojure
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          cli: 1.11.3.1463
+
+      - name: Determine bundle source
+        id: source
+        run: |
+          BUNDLE_ID="${{ steps.meta.outputs.bundle-id }}"
+          REQUEST_TYPE="${{ steps.meta.outputs.request-type }}"
+
+          if [ "$REQUEST_TYPE" == "predefined" ]; then
+            # Check for existing bundle definition
+            if [ -f "bundles/$BUNDLE_ID.edn" ]; then
+              echo "source-file=bundles/$BUNDLE_ID.edn" >> $GITHUB_OUTPUT
+              echo "Using predefined bundle: bundles/$BUNDLE_ID.edn"
+            else
+              echo "Error: Bundle definition not found: bundles/$BUNDLE_ID.edn"
+              exit 1
+            fi
+          elif [ "$REQUEST_TYPE" == "custom" ]; then
+            # Look for custom deps file
+            CUSTOM_FILE=$(find custom-deps requests -name "*$BUNDLE_ID*.edn" 2>/dev/null | head -1 || echo "")
+            if [ -z "$CUSTOM_FILE" ]; then
+              echo "Error: No custom deps file found for $BUNDLE_ID"
+              exit 1
+            fi
+            echo "source-file=$CUSTOM_FILE" >> $GITHUB_OUTPUT
+            echo "Using custom deps: $CUSTOM_FILE"
+          fi
+
+      - name: Read bundle metadata
+        id: bundle-meta
+        run: |
+          SOURCE_FILE="${{ steps.source.outputs.source-file }}"
+
+          # Extract description and size estimate
+          DESCRIPTION=$(grep ':description' "$SOURCE_FILE" | sed 's/.*:description "\([^"]*\)".*/\1/' || echo "Custom bundle request")
+          SIZE_EST=$(grep ':size-estimate-mb' "$SOURCE_FILE" | grep -o '[0-9]\+' || echo "unknown")
+
+          echo "description=$DESCRIPTION" >> $GITHUB_OUTPUT
+          echo "size-estimate=$SIZE_EST" >> $GITHUB_OUTPUT
+
+      - name: Build M2 cache
+        id: build
+        run: |
+          BUNDLE_ID="${{ steps.meta.outputs.bundle-id }}"
+          SOURCE_FILE="${{ steps.source.outputs.source-file }}"
+          TMP_M2="/tmp/m2-$BUNDLE_ID"
+
+          echo "Building bundle: $BUNDLE_ID"
+          echo "From: $SOURCE_FILE"
+
+          mkdir -p "$TMP_M2"
+
+          START_TIME=$(date +%s)
+
+          # Download dependencies
+          clojure -Srepro -Sforce \
+                  -Sdeps "{:mvn/local-repo \"$TMP_M2\"}" \
+                  -Sdeps "$(cat $SOURCE_FILE)" \
+                  -P
+
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+
+          # Get statistics
+          ARTIFACT_COUNT=$(find "$TMP_M2" -name "*.jar" | wc -l | tr -d ' ')
+          SIZE_UNCOMPRESSED=$(du -sm "$TMP_M2" | cut -f1)
+
+          # Create tarball
+          TARBALL="m2-$BUNDLE_ID.tar.gz"
+          tar czf "$TARBALL" -C /tmp "m2-$BUNDLE_ID"
+
+          SIZE_COMPRESSED=$(du -m "$TARBALL" | cut -f1)
+
+          echo "duration=$DURATION" >> $GITHUB_OUTPUT
+          echo "artifact-count=$ARTIFACT_COUNT" >> $GITHUB_OUTPUT
+          echo "size-uncompressed=$SIZE_UNCOMPRESSED" >> $GITHUB_OUTPUT
+          echo "size-compressed=$SIZE_COMPRESSED" >> $GITHUB_OUTPUT
+          echo "tarball=$TARBALL" >> $GITHUB_OUTPUT
+
+          echo "✅ Build complete!"
+          echo "  Duration: ${DURATION}s"
+          echo "  Artifacts: $ARTIFACT_COUNT JARs"
+          echo "  Size: ${SIZE_COMPRESSED} MB (compressed)"
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: m2-bundles
+          files: ${{ steps.build.outputs.tarball }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request
+        id: pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref_name }}
+          base: main
+          title: "🤖 Bundle Request: ${{ steps.meta.outputs.bundle-id }}"
+          body: |
+            ## 🤖 Automated Bundle Build
+
+            **Requested by**: Claude Code Web
+            **Bundle ID**: `${{ steps.meta.outputs.bundle-id }}`
+            **Request type**: ${{ steps.meta.outputs.request-type }}
+            **Status**: ✅ Built successfully
+
+            ---
+
+            ### 📥 Download
+
+            ```bash
+            curl -L -O https://github.com/${{ github.repository }}/releases/download/m2-bundles/m2-${{ steps.meta.outputs.bundle-id }}.tar.gz
+            ```
+
+            **Direct URL**: https://github.com/${{ github.repository }}/releases/download/m2-bundles/m2-${{ steps.meta.outputs.bundle-id }}.tar.gz
+
+            ---
+
+            ### 📊 Statistics
+
+            - **Build time**: ${{ steps.build.outputs.duration }}s
+            - **Size (uncompressed)**: ${{ steps.build.outputs.size-uncompressed }} MB
+            - **Size (compressed)**: ${{ steps.build.outputs.size-compressed }} MB
+            - **JAR files**: ${{ steps.build.outputs.artifact-count }}
+            - **Estimated size**: ${{ steps.bundle-meta.outputs.size-estimate }} MB
+
+            ---
+
+            ### 🚀 Usage
+
+            ```bash
+            # Download
+            curl -L -O https://github.com/${{ github.repository }}/releases/download/m2-bundles/m2-${{ steps.meta.outputs.bundle-id }}.tar.gz
+
+            # Extract
+            mkdir -p ~/.m2-cache
+            tar xzf m2-${{ steps.meta.outputs.bundle-id }}.tar.gz -C ~/.m2-cache/
+
+            # Use with Clojure
+            clojure -Sdeps '{:mvn/local-repo "~/.m2-cache/m2-${{ steps.meta.outputs.bundle-id }}"}' -M:your-alias
+            ```
+
+            ---
+
+            ### 📝 Description
+
+            ${{ steps.bundle-meta.outputs.description }}
+
+            ---
+
+            *Auto-generated by GitHub Actions*
+            *Build log*: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          labels: |
+            claude-request
+            bundle-built
+            automated
+          draft: false
+
+      - name: Comment on PR with success
+        if: success() && steps.pr.outputs.pull-request-number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.pr.outputs.pull-request-number }};
+            const bundleId = '${{ steps.meta.outputs.bundle-id }}';
+            const duration = '${{ steps.build.outputs.duration }}';
+            const sizeMB = '${{ steps.build.outputs.size-compressed }}';
+            const downloadUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/m2-bundles/m2-${bundleId}.tar.gz`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `✅ **Bundle ready!**\n\n` +
+                    `- Built in ${duration}s\n` +
+                    `- Size: ${sizeMB} MB\n` +
+                    `- Download: ${downloadUrl}\n\n` +
+                    `@claude Your dependencies are ready to use! 🎉`
+            });
+
+      - name: Add success summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## ✅ Bundle Built Successfully
+
+          **Bundle ID**: ${{ steps.meta.outputs.bundle-id }}
+          **Build time**: ${{ steps.build.outputs.duration }}s
+          **Size**: ${{ steps.build.outputs.size-compressed }} MB
+          **PR**: #${{ steps.pr.outputs.pull-request-number }}
+
+          **Download URL**:
+          \`\`\`
+          https://github.com/${{ github.repository }}/releases/download/m2-bundles/m2-${{ steps.meta.outputs.bundle-id }}.tar.gz
+          \`\`\`
+          EOF
+
+      - name: Handle build failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Create issue to track failure
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `❌ Bundle build failed: ${{ steps.meta.outputs.bundle-id }}`,
+              body: `Build failed for branch: \`${{ github.ref_name }}\`\n\n` +
+                    `See workflow run: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['bundle-build-failed', 'claude-request']
+            });
