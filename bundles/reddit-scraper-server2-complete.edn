@@ -1,0 +1,60 @@
+{:schema-version "1.0.0"
+ :bundle-id "reddit-scraper-server2-complete"
+ :version "1.0.0"
+ :description "Complete reddit-scraper/server2 Maven dependencies including all aliases (dev, test, nrepl, build)"
+ :maintainer "@realgenekim"
+ :tags ["reddit-scraper" "server" "web" "testing" "development"]
+ :size-estimate-mb 120
+
+ ;; NOTE: This bundle contains ONLY Maven dependencies
+ ;; Git dependencies need to be resolved separately:
+ ;; - genek/logging {:git/url "https://github.com/realgenekim/logging", :git/sha "ea3a7ea80385eb9c7aa798ff998cc54bdb029a9c"}
+ ;; - browser-reload/browser-reload {:git/url "https://github.com/realgenekim/browser-reload", :git/sha "a794c2dd1dc505d2a400419b937d8df04c93d494"}
+ ;;
+ ;; Local dependencies are in separate repos:
+ ;; - genek/reddit {:local/root "../reddit-scraper"}
+ ;; - genek/mysql {:local/root "../mysql"}
+ ;; - genek/closed-record {:local/root "../../closed-record"}
+
+ :deps
+ {;; Core Clojure
+  org.clojure/clojure {:mvn/version "1.11.3"}
+
+  ;; Web Server
+  http-kit/http-kit {:mvn/version "2.8.0"}
+
+  ;; Routing
+  ring/ring-core {:mvn/version "1.12.0"}
+  ring/ring-defaults {:mvn/version "0.5.0"}
+  ring-basic-authentication/ring-basic-authentication {:mvn/version "1.1.1"}
+  metosin/reitit {:mvn/version "0.7.0"}
+  metosin/reitit-ring {:mvn/version "0.7.0"}
+  metosin/reitit-spec {:mvn/version "0.7.0"}
+
+  ;; Response formats
+  metosin/muuntaja {:mvn/version "0.6.8"}
+  hiccup/hiccup {:mvn/version "2.0.0"}
+
+  ;; Component lifecycle
+  com.stuartsierra/component {:mvn/version "1.1.0"}
+
+  ;; Guardrails
+  com.fulcrologic/guardrails {:mvn/version "1.1.10"}
+
+  ;; Logging
+  com.taoensso/timbre {:mvn/version "6.3.1"}
+
+  ;; Dev dependencies (:dev alias)
+  ring/ring-devel {:mvn/version "1.12.2"}
+  hawk/hawk {:mvn/version "0.2.11"}
+  net.java.dev.jna/jna {:mvn/version "5.14.0"}
+
+  ;; Testing dependencies (:run-tests alias)
+  lambdaisland/kaocha {:mvn/version "1.91.1392"}
+  ring/ring-mock {:mvn/version "0.4.0"}
+
+  ;; NREPL (:nrepl alias)
+  nrepl/nrepl {:mvn/version "1.3.1"}
+
+  ;; Jib for Docker builds (:jib-deploy alias)
+  com.google.cloud.tools/jib-core {:mvn/version "0.25.0"}}}
