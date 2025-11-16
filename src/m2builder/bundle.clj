@@ -42,35 +42,40 @@
   "Download dependencies to temp M2 directory using clojure CLI"
   [bundle-def m2-dir]
   (let [deps-map (:deps bundle-def)
-        temp-deps-file (io/file "/tmp" (str "temp-deps-" (System/currentTimeMillis) ".edn"))
+        temp-project-dir (str "/tmp/clj-project-" (System/currentTimeMillis))
+        temp-deps-file (io/file temp-project-dir "deps.edn")
         deps-edn-content (pr-str {:deps deps-map})]
 
-    ;; Write temporary deps.edn
+    ;; Create temp project directory
+    (.mkdirs (io/file temp-project-dir))
+
+    ;; Write deps.edn to temp directory
     (spit temp-deps-file deps-edn-content)
 
     (println "Downloading dependencies to" m2-dir "...")
     (println "  Using deps:" (keys deps-map))
 
-    ;; Run clojure -P to download deps
+    ;; Run clojure -P from temp directory to download deps
     (let [result (sh/sh "clojure"
                         "-Sdeps" (str "{:mvn/local-repo \"" m2-dir "\"}")
                         "-Srepro"
                         "-Sforce"
                         "-P"
-                        "-Sdeps" deps-edn-content)]
+                        :dir temp-project-dir)]
 
       (when-not (zero? (:exit result))
         (throw (ex-info "Failed to download dependencies"
                         {:exit-code (:exit result)
-                         :stderr (:err result)})))
+                         :stderr (:err result)
+                         :stdout (:out result)})))
 
-      ;; Clean up temp file
-      (.delete temp-deps-file)
+      ;; Clean up temp directory
+      (sh/sh "rm" "-rf" temp-project-dir)
 
       ;; Count JARs
       (let [jar-count (->> (file-seq (io/file m2-dir))
-                          (filter #(.endsWith (.getName %) ".jar"))
-                          count)]
+                           (filter #(.endsWith (.getName %) ".jar"))
+                           count)]
         (println "  ✓ Downloaded" jar-count "JAR files")
         jar-count))))
 
@@ -194,7 +199,7 @@
 
             ;; Upload to GCS
             (let [urls (when upload?
-                        (upload-to-gcs tarball-path bundle-id timestamp))]
+                         (upload-to-gcs tarball-path bundle-id timestamp))]
 
               ;; Calculate build time
               (let [build-time-ms (- (System/currentTimeMillis) start-time)
@@ -260,6 +265,4 @@
                  :cleanup? false})
 
   ;; Build server2 bundle
-  (build-bundle {:bundle-id "reddit-scraper-server2"})
-
-  )
+  (build-bundle {:bundle-id "reddit-scraper-server2"}))
