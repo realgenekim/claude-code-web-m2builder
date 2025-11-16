@@ -48,6 +48,25 @@ runtests-once:
 	bin/kaocha --fail-fast
 
 # ========================================
+# Gateway (Python Flask)
+# ========================================
+
+# Install gateway dependencies
+gateway-install:
+	@echo "📦 Installing gateway dependencies..."
+	cd gateway && pip install -r requirements.txt
+	@echo "✅ Gateway dependencies installed"
+
+# Run gateway locally
+gateway-run:
+	@echo "🚀 Starting GCS Mailbox Gateway..."
+	@echo "   Port: 8080"
+	@echo "   User: claude"
+	@echo "   Password: f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd"
+	@echo ""
+	cd gateway && python app.py
+
+# ========================================
 # Development
 # ========================================
 
@@ -62,7 +81,7 @@ clean:
 # Help
 help:
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@echo "  Clojure Project Template - Make Commands"
+	@echo "  M2 Bundler - Make Commands"
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 	@echo "🔧 Setup:"
@@ -75,6 +94,10 @@ help:
 	@echo "  make runtests             - Run tests with watcher"
 	@echo "  make runtests-once        - Run tests once with fail-fast"
 	@echo ""
+	@echo "🌐 Gateway:"
+	@echo "  make gateway-install      - Install Python dependencies"
+	@echo "  make gateway-run          - Run gateway locally (port 8080)"
+	@echo ""
 	@echo "🚀 Development:"
 	@echo "  make repl                 - Start basic REPL"
 	@echo "  make clean                - Clean compiled artifacts"
@@ -82,4 +105,4 @@ help:
 	@echo ""
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-.PHONY: nrepl mcp-configure mcp-remove mcp-run runtests runtests-once repl clean help
+.PHONY: nrepl mcp-configure mcp-remove mcp-run runtests runtests-once repl clean help gateway-install gateway-run
