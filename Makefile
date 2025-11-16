@@ -62,9 +62,24 @@ gateway-run:
 	@echo "🚀 Starting GCS Mailbox Gateway..."
 	@echo "   Port: 8080"
 	@echo "   User: claude"
-	@echo "   Password: f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd"
+	@echo "   Password: (loaded from ~/src.local/secrets/m2-gateway-password.txt)"
 	@echo ""
-	cd gateway && python app.py
+	GATEWAY_PASS=$$(cat ~/src.local/secrets/m2-gateway-password.txt) && cd gateway && python app.py
+
+# Copy gateway password to clipboard (for sharing with sandbox agents)
+gateway-password:
+	@cat ~/src.local/secrets/m2-gateway-password.txt | tr -d '\n' | pbcopy
+	@echo "✅ Gateway password copied to clipboard!"
+	@echo "   User: claude"
+	@echo "   Password: $$(cat ~/src.local/secrets/m2-gateway-password.txt | cut -c1-10)..."
+
+# Rotate gateway password
+gateway-rotate:
+	@scripts/rotate-gateway-password.sh
+
+# Generate sandbox agent prompt with embedded password
+claude-sandbox-prompt:
+	@scripts/generate-sandbox-prompt.sh
 
 # ========================================
 # Development
@@ -105,4 +120,4 @@ help:
 	@echo ""
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-.PHONY: nrepl mcp-configure mcp-remove mcp-run runtests runtests-once repl clean help gateway-install gateway-run
+.PHONY: nrepl mcp-configure mcp-remove mcp-run runtests runtests-once repl clean help gateway-install gateway-run gateway-password gateway-rotate claude-sandbox-prompt

@@ -28,3 +28,6 @@ deps-responses/*.edn
 .DS_Store
 Thumbs.db
 m2-COMPLETE-inspect
+
+# Generated sandbox prompt (contains secrets)
+claude-sandboxed/SANDBOX_PROMPT_WITH_SECRET.md

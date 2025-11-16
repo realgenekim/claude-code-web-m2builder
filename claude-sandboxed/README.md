@@ -276,9 +276,12 @@ The gateway is deployed! You can now request bundles via HTTP:
 
 ### Step 1: Set Credentials
 
+**IMPORTANT**: The gateway password is NOT stored in this repo for security reasons.
+Get the current password from your operator or from `~/src.local/secrets/m2-gateway-password.txt`.
+
 ```bash
 export GATEWAY_URL="https://m2-gateway-1018897188794.us-central1.run.app"
-export GATEWAY_AUTH="claude:f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd"
+export GATEWAY_AUTH="claude:<PASSWORD_FROM_OPERATOR>"
 ```
 
 ### Step 2: Request Bundle

@@ -21,7 +21,10 @@ GCS_BUCKET = os.environ.get(
 )
 GCS_MAILBOX_PATH = f"{GCS_BUCKET}/mailbox"
 GATEWAY_USER = os.environ.get('GATEWAY_USER', 'claude')
-GATEWAY_PASS = os.environ.get('GATEWAY_PASS', 'f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd')
+GATEWAY_PASS = os.environ.get('GATEWAY_PASS')  # Required - set via environment variable
+
+if not GATEWAY_PASS:
+    raise ValueError("GATEWAY_PASS environment variable must be set")
 
 def check_auth(username, password):
     """Check if username/password combo is valid"""
