@@ -83,11 +83,14 @@ When working on tasks:
 ```
 gs://gene-m2-bundler-f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd/
 ├── m2/                           # Maven bundles (public-read)
+│   ├── reddit-scraper-server2-COMPLETE-latest.tar.gz       # ✅ RECOMMENDED (252 JARs, 71 MB)
+│   ├── reddit-scraper-server2-COMPLETE-{timestamp}.tar.gz
+│   ├── reddit-scraper-server2-latest.tar.gz                # OLD (129 JARs, 24 MB) - missing deps!
 │   ├── reddit-scraper-server2-{timestamp}.tar.gz
-│   ├── reddit-scraper-server2-latest.tar.gz
 │   └── metadata/
+│       ├── reddit-scraper-server2-COMPLETE-{timestamp}.json
 │       ├── reddit-scraper-server2-{timestamp}.json
-│       └── reddit-scraper-server2-latest.json
+│       └── ...
 │
 └── mailbox/                      # Request/response (to be implemented)
     ├── requests/
@@ -97,6 +100,8 @@ gs://gene-m2-bundler-f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd/
     └── processed/
         └── {session-id}/{request-id}.edn
 ```
+
+**Important**: The COMPLETE bundles contain ALL dependencies (including transitive deps from local/git dependencies). Always use COMPLETE bundles for production.
 
 ---
 
@@ -131,17 +136,17 @@ gs://gene-m2-bundler-f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd/
 ### Download and Verify
 
 ```bash
-# Download bundle
+# Download COMPLETE bundle (recommended)
 mkdir -p ~/.m2-cache-test
 cd ~/.m2-cache-test
-curl -L -O https://storage.googleapis.com/gene-m2-bundler-f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd/m2/reddit-scraper-server2-latest.tar.gz
+curl -L -O https://storage.googleapis.com/gene-m2-bundler-f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd/m2/reddit-scraper-server2-COMPLETE-latest.tar.gz
 
 # Extract
-tar -xzf reddit-scraper-server2-latest.tar.gz
+tar -xzf reddit-scraper-server2-COMPLETE-latest.tar.gz
 
 # Verify
-find . -name "*.jar" | wc -l  # Should show 129
-du -sh .                       # Should show ~30M
+find . -name "*.jar" | wc -l  # Should show 252
+du -sh .                       # Should show ~92M
 ```
 
 ### Use with Clojure
@@ -178,7 +183,7 @@ make runtests-once
 - **[Agent Collaboration Plan](docs/agent-collaboration-plan.md)** - Overall architecture
 - **[M2 Bundler Operations](docs/m2-bundler-operations.md)** - Service operator guide
 - **[Bundle Creation Process](docs/bundle-creation-process.md)** - Step-by-step tarball creation
-- **[Claude Agent Guide](claude-agent/README.md)** - Sandboxed agent instructions
+- **[Sandboxed Agent Guide](claude-sandboxed/README.md)** - Copy-paste instructions for Claude Code agents in sandboxes
 
 ---
 

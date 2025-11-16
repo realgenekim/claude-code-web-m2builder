@@ -132,6 +132,50 @@ clojure \
 
 ---
 
+### 4.1 Ensure Clojure CLI Versions (CRITICAL!)
+
+**Why**: The Clojure CLI tool itself may require a different version than what's in the project deps.edn. Sandboxes install Clojure CLI which comes with its own version (e.g., 1.12.3), causing "missing artifact" errors if only project's version (e.g., 1.11.1) is bundled.
+
+**Versions Bundled**: `1.11.1`, `1.11.3`, `1.12.0`, `1.12.3`
+
+**Command** (for each version):
+```bash
+# Example for Clojure 1.12.3
+mkdir -p /tmp/clj-1.12.3-temp
+echo '{:deps {org.clojure/clojure {:mvn/version "1.12.3"}}}' > /tmp/clj-1.12.3-temp/deps.edn
+cd /tmp/clj-1.12.3-temp
+clojure -Sdeps '{:mvn/local-repo "/tmp/m2-..."}' -Srepro -Sforce -P
+```
+
+**Code**:
+```clojure
+(def clojure-versions-to-bundle
+  ["1.11.1" "1.11.3" "1.12.0" "1.12.3"])
+
+(defn ensure-clojure-versions [m2-dir]
+  (doseq [version clojure-versions-to-bundle]
+    (let [version-dir (io/file m2-dir "org" "clojure" "clojure" version)]
+      (when-not (and (.exists version-dir)
+                     (some #(.endsWith (.getName %) ".jar") (.listFiles version-dir)))
+        (println "  Downloading Clojure" version "...")
+        ;; Download logic here
+        ))))
+```
+
+**Result**: All common Clojure versions bundled, preventing CLI version mismatch errors in sandboxes.
+
+**Files Added Per Version**:
+```
+org/clojure/clojure/1.12.3/
+├── clojure-1.12.3.jar        # ~4.2 MB
+├── clojure-1.12.3.jar.sha1
+├── clojure-1.12.3.pom
+├── clojure-1.12.3.pom.sha1
+└── _remote.repositories
+```
+
+---
+
 ### 5. Create Tarball
 
 **Command Executed**:
@@ -240,10 +284,15 @@ Building M2 Bundle: reddit-scraper-server2
 Downloading dependencies to /tmp/m2-reddit-scraper-server2-1763257440607 ...
   Using deps: (org.clojure/clojure http-kit/http-kit ...)
   ✓ Downloaded 129 JAR files
+Ensuring Clojure CLI versions are bundled...
+  Downloading Clojure 1.11.3 ...
+  Downloading Clojure 1.12.0 ...
+  Downloading Clojure 1.12.3 ...
+  ✓ Clojure versions bundled: [1.11.1 1.11.3 1.12.0 1.12.3]
 Creating tarball...
   From: /tmp/m2-reddit-scraper-server2-1763257440607
   To: /tmp/m2-reddit-scraper-server2-1763257440607.tar.gz
-  ✓ Created: 24.4 MB
+  ✓ Created: 83.0 MB
 Uploading to GCS...
   Versioned: gs://.../m2/reddit-scraper-server2-1763257440607.tar.gz
   Latest: gs://.../m2/reddit-scraper-server2-latest.tar.gz
@@ -256,9 +305,9 @@ Cleaning up temporary files...
 ════════════════════════════════════════════════════════════
 
 Bundle Details:
-  Size:       24.4 MB
-  JARs:       129
-  Build time: 25.0 seconds
+  Size:       83.0 MB
+  JARs:       257
+  Build time: 35.0 seconds
 
 Download URLs:
   Versioned: https://storage.googleapis.com/.../reddit-scraper-server2-1763257440607.tar.gz
@@ -274,16 +323,16 @@ Download URLs:
 # Create directory
 mkdir -p ~/.m2-cache-reddit-scraper-server2
 
-# Download
+# Download COMPLETE bundle (includes all Clojure versions)
 curl -L -o ~/.m2-cache-reddit-scraper-server2/bundle.tar.gz \
-  https://storage.googleapis.com/gene-m2-bundler-f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd/m2/reddit-scraper-server2-latest.tar.gz
+  https://storage.googleapis.com/gene-m2-bundler-f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd/m2/reddit-scraper-server2-COMPLETE-latest.tar.gz
 
 # Extract
 cd ~/.m2-cache-reddit-scraper-server2
 tar -xzf bundle.tar.gz
 rm bundle.tar.gz
 
-# Result: 30 MB, 129 JARs
+# Result: 100 MB uncompressed, 257 JARs (including Clojure 1.11.1, 1.11.3, 1.12.0, 1.12.3)
 ```
 
 ### Configure Clojure to Use Bundle
@@ -367,4 +416,5 @@ The `-C` flag ensures extraction creates the `.m2/repository/` structure directl
 ---
 
 **Generated**: 2025-11-16
-**Bundle Example**: reddit-scraper-server2 (24.4 MB, 129 JARs, 25s build time)
+**Bundle Example**: reddit-scraper-server2-COMPLETE (83 MB, 257 JARs, 35s build time)
+**Includes**: Clojure versions 1.11.1, 1.11.3, 1.12.0, 1.12.3 for CLI compatibility

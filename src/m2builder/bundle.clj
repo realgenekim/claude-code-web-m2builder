@@ -79,6 +79,44 @@
         (println "  ✓ Downloaded" jar-count "JAR files")
         jar-count))))
 
+(def clojure-versions-to-bundle
+  "Common Clojure versions to include in every bundle for CLI compatibility"
+  ["1.11.1" "1.11.3" "1.12.0" "1.12.3"])
+
+(defn ensure-clojure-versions
+  "Ensure multiple Clojure versions are in the M2 cache for CLI compatibility.
+   
+  This fixes issues where the Clojure CLI tool itself requires a different
+  version than what's in the project deps.edn."
+  [m2-dir]
+  (println "Ensuring Clojure CLI versions are bundled...")
+  (doseq [version clojure-versions-to-bundle]
+    (let [version-dir (io/file m2-dir "org" "clojure" "clojure" version)]
+      (when-not (and (.exists version-dir)
+                     (some #(.endsWith (.getName %) ".jar") (.listFiles version-dir)))
+        (println "  Downloading Clojure" version "...")
+        (let [temp-project-dir (str "/tmp/clj-" version "-" (System/currentTimeMillis))
+              deps-edn-content (pr-str {:deps {'org.clojure/clojure {:mvn/version version}}})]
+          ;; Create temp project
+          (.mkdirs (io/file temp-project-dir))
+          (spit (io/file temp-project-dir "deps.edn") deps-edn-content)
+
+          ;; Download
+          (let [result (sh/sh "clojure"
+                              "-Sdeps" (str "{:mvn/local-repo \"" m2-dir "\"}")
+                              "-Srepro" "-Sforce" "-P"
+                              :dir temp-project-dir)]
+            (when-not (zero? (:exit result))
+              (println "    Warning: Failed to download Clojure" version)))
+
+          ;; Clean up temp project
+          (sh/sh "rm" "-rf" temp-project-dir)))))
+
+  ;; Report what we have
+  (let [clj-dir (io/file m2-dir "org" "clojure" "clojure")
+        versions (when (.exists clj-dir) (vec (.list clj-dir)))]
+    (println "  ✓ Clojure versions bundled:" versions)))
+
 (defn create-tarball
   "Create compressed tarball from M2 directory"
   [m2-dir bundle-id timestamp]
@@ -192,7 +230,15 @@
 
       (try
         ;; Download dependencies
-        (let [jar-count (download-deps bundle-def m2-dir)]
+        (let [_ (download-deps bundle-def m2-dir)
+
+              ;; Ensure common Clojure versions are bundled for CLI compatibility
+              _ (ensure-clojure-versions m2-dir)
+
+              ;; Recount JARs after adding Clojure versions
+              jar-count (->> (file-seq (io/file m2-dir))
+                             (filter #(.endsWith (.getName %) ".jar"))
+                             count)]
 
           ;; Create tarball
           (let [{:keys [tarball-path size-mb size-bytes]} (create-tarball m2-dir bundle-id timestamp)]

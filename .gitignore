@@ -27,3 +27,4 @@ deps-responses/*.edn
 # OS
 .DS_Store
 Thumbs.db
+m2-COMPLETE-inspect

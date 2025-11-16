@@ -3,7 +3,8 @@
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.string :as str]
-            [m2builder.bundle :as bundle]))
+            [m2builder.bundle :as bundle]
+            [m2builder.mailbox :as mailbox]))
 
 (defn -main
   "CLI entry point"
@@ -11,6 +12,8 @@
   (let [[command & rest-args] args]
     (case command
       "build-bundle" (apply bundle/build-bundle-cli rest-args)
+      "process-request" (apply mailbox/process-request-cli rest-args)
+      "poll-requests" (mailbox/poll-requests)
       (println "Unknown command:" command))))
 
 (comment
@@ -20,6 +23,4 @@
   (bundle/list-bundles)
 
   ;; Build a bundle
-  (bundle/build-bundle {:bundle-id "clojure-minimal"})
-
-  )
+  (bundle/build-bundle {:bundle-id "clojure-minimal"}))
