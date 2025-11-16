@@ -77,6 +77,24 @@ def gsutil_ls(gcs_path):
         return [line.strip() for line in result.stdout.strip().split('\n') if line.strip()]
     return []
 
+@app.route('/', methods=['GET'])
+def index():
+    """Root endpoint - show usage"""
+    return jsonify({
+        'service': 'M2 Bundler Gateway',
+        'version': '1.0.0',
+        'endpoints': {
+            'GET /': 'This help message',
+            'GET /health': 'Health check',
+            'POST /request': 'Submit bundle request (auth required)',
+            'GET /status/<session>/<request>': 'Check request status (auth required)',
+            'GET /requests': 'List pending requests (auth required)',
+            'GET /responses/<session>': 'List responses for session (auth required)'
+        },
+        'auth': 'HTTP Basic Auth required for most endpoints',
+        'docs': 'https://github.com/realgenekim/claude-code-web-m2builder'
+    })
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""

@@ -268,39 +268,63 @@ rm -rf /tmp/*.tar.gz
 
 ---
 
-## Advanced: Request/Response System (Future)
+## Advanced: Request/Response System (NOW LIVE!)
 
-**Note**: The request/response gateway is not yet deployed. For now, use direct download above.
+**Gateway URL**: https://m2-gateway-1018897188794.us-central1.run.app
 
-When the gateway is deployed, you'll be able to request custom bundles:
+The gateway is deployed! You can now request bundles via HTTP:
 
-### Step 1: Get Credentials
+### Step 1: Set Credentials
 
 ```bash
-export GCS_GATEWAY_URL="https://gcs-upload-gateway-xxxxx.run.app"
-export GCS_GATEWAY_USER="claude"
-export GCS_GATEWAY_PASS="your-secret-password"
+export GATEWAY_URL="https://m2-gateway-1018897188794.us-central1.run.app"
+export GATEWAY_AUTH="claude:f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd"
 ```
 
 ### Step 2: Request Bundle
 
 ```bash
-./request-bundle.sh reddit-scraper-server2
+curl -s -X POST $GATEWAY_URL/request \
+  -u $GATEWAY_AUTH \
+  -H "Content-Type: application/json" \
+  -d '{"bundle_id": "reddit-scraper-server2"}'
+
+# Response:
+# {
+#   "request_id": "req-1763260804562",
+#   "session_id": "gateway-session-1763260804562",
+#   "status": "submitted"
+# }
+# SAVE the session_id and request_id!
 ```
 
 ### Step 3: Check Status
 
 ```bash
-./check-status.sh SESSION_ID REQUEST_ID
+# Replace with your session_id and request_id
+curl -s $GATEWAY_URL/status/SESSION_ID/REQUEST_ID -u $GATEWAY_AUTH
+
+# Response (when pending):
+# {"status": "pending", "message": "Request is still being processed"}
+
+# Response (when completed):
+# {"status": "completed", "response_edn": "...bundle URL in here..."}
 ```
 
-### Step 4: Download
+### Step 4: Download Bundle
+
+Once you get the bundle URL from the response, download it:
 
 ```bash
-./download-bundle.sh BUNDLE_URL
+curl -L -o ~/.m2-cache/bundle.tar.gz BUNDLE_URL
 ```
 
-See scripts in this directory for details.
+Or use the pre-built COMPLETE bundle directly (recommended):
+
+```bash
+curl -L -o ~/.m2-cache/bundle.tar.gz \
+  https://storage.googleapis.com/gene-m2-bundler-f9a6d1b69e17b97714b0e9cbe141e4ac2c14b18ad6cd/m2/reddit-scraper-server2-COMPLETE-latest.tar.gz
+```
 
 ---
 
