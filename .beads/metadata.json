@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "m2builder",
+  "project_id": "fcaf74f5-be93-48f1-b14f-a6d494ac5dfd"
+}

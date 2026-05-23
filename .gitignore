@@ -31,3 +31,8 @@ m2-COMPLETE-inspect
 
 # Generated sandbox prompt (contains secrets)
 claude-sandboxed/SANDBOX_PROMPT_WITH_SECRET.md
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key

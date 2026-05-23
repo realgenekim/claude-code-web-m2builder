@@ -1,0 +1,3 @@
+Error: in prepare, no such column: close_reason
+   'closed_at', closed_at, 'close_reason', COALESCE(close_reason,'')   ) FROM is
+                                      error here ---^
